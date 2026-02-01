@@ -42,6 +42,7 @@ class Enemy(GameObject):
         """
         플레이어를 향해 직선으로 이동 (다른 적들과 겹치지 않게)
         최적화: 거리 기반 조기 컷오프로 불필요한 충돌 체크 감소
+        Lock-in 방지: 이미 겹쳐있는 경우 벗어나는 방향 이동 허용
         
         Args:
             player: Player 객체
@@ -102,8 +103,28 @@ class Enemy(GameObject):
                     if manhattan_distance > COLLISION_CHECK_DISTANCE:
                         continue  # 충돌 불가능, 스킵
                     
-                    # 실제 충돌 체크
-                    if self.collides_with(other):
+                    # 현재 위치에서 이미 충돌 중인지 체크 (lock-in 방지)
+                    self.grid_x = old_x
+                    self.grid_y = old_y
+                    was_colliding = self.collides_with(other)
+                    self.grid_x = new_x
+                    self.grid_y = new_y
+                    
+                    # 새 위치에서 충돌하는지 체크
+                    is_colliding = self.collides_with(other)
+                    
+                    # 이미 충돌 중이었다면, 새 위치에서도 충돌하더라도 거리가 멀어지는 방향이면 허용
+                    if is_colliding:
+                        if was_colliding:
+                            # 이미 겹쳐있었음 - 거리가 멀어지는지 확인
+                            old_distance_sq = (old_x - other_center_x)**2 + (old_y - other_center_y)**2
+                            new_distance_sq = (new_x - other_center_x)**2 + (new_y - other_center_y)**2
+                            
+                            # 거리가 멀어지면 이동 허용 (lock-in 탈출)
+                            if new_distance_sq > old_distance_sq:
+                                continue  # 이 적과는 충돌 OK
+                        
+                        # 새로 충돌하거나, 이미 충돌 중인데 더 가까워지면 이동 불가
                         move_valid = False
                         break
             

@@ -62,18 +62,26 @@ class TestEnemySpawning:
         assert len(game.enemies) == 5
     
     def test_spawned_enemy_at_screen_edge(self, game):
-        """spawn된 적이 그리드 가장자리에 있는지 테스트"""
+        """spawn된 적이 화면 경계 근처에 있는지 테스트 (모양 크기 고려)"""
         game.enemies = []
         game.spawn_enemy()
         
         enemy = game.enemies[0]
         
-        # 그리드 가장자리에 spawn되어야 함
+        # 적의 모든 그리드 위치가 화면 안에 있어야 함
+        positions = enemy.get_grid_positions()
+        for x, y in positions:
+            assert 0 <= x < GRID_COLS
+            assert 0 <= y < GRID_ROWS
+        
+        # 적의 일부가 가장자리에 닿아 있어야 함
+        xs = [x for x, y in positions]
+        ys = [y for x, y in positions]
         at_edge = (
-            enemy.grid_x == 0 or 
-            enemy.grid_x == GRID_COLS - 1 or 
-            enemy.grid_y == 0 or 
-            enemy.grid_y == GRID_ROWS - 1
+            min(xs) == 0 or 
+            max(xs) == GRID_COLS - 1 or 
+            min(ys) == 0 or 
+            max(ys) == GRID_ROWS - 1
         )
         assert at_edge
 

@@ -133,7 +133,8 @@ class Game:
             self.spawn_enemy()
             self.last_spawn_time = current_time
         
-        # 최적화: 적 이동 순서 - 플레이어에서 먼 적부터 이동 (앞쪽 적들이 먼저 자리 잡음)
+        # 적 이동: 모든 적들과 충돌 체크 (거리 기반 최적화는 유지)
+        # 먼 적부터 이동하여 앞쪽 적들이 먼저 자리 잡도록 함
         if self.enemies:
             # 플레이어 중심 계산
             player_center_x, player_center_y = self.player.get_center()
@@ -145,11 +146,9 @@ class Game:
                 reverse=True
             )
             
-            # 정렬된 순서대로 이동 (이미 움직인 적들만 충돌 체크)
-            for i, enemy in enumerate(sorted_enemies):
-                # 이미 움직인 적들만 충돌 체크 대상으로
-                already_moved = sorted_enemies[:i]
-                enemy.move_towards_player(self.player, already_moved)
+            # 각 적은 모든 다른 적들과 충돌 체크 (거리 최적화로 실제 체크는 적음)
+            for enemy in sorted_enemies:
+                enemy.move_towards_player(self.player, self.enemies)
         
         # 충돌 판정
         self.check_collision()
