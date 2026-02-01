@@ -10,7 +10,7 @@ from src.constants import (
     BLACK, WHITE, GAME_TITLE, ENEMY_SPAWN_INTERVAL,
     ENEMY_SHAPES, ENEMY_COLORS, MAX_ENEMIES,
     HEALTH_POTION_SPAWN_INTERVAL, NUM_OBSTACLES,
-    PLAYER_COLLISION_DAMAGE
+    PLAYER_COLLISION_DAMAGE, ENEMY_HP
 )
 from src.player import Player
 from src.enemy import Enemy
@@ -73,6 +73,9 @@ class Game:
         
         # delta time 추적
         self.last_time = pygame.time.get_ticks() / 1000.0
+        
+        # 체력바 표시 옵션 (H 키로 토글)
+        self.show_hp_bars = True
         
         # 배경 음악 로드 및 재생
         self.load_music()
@@ -179,7 +182,7 @@ class Game:
             grid_x = random.randint(-shape_min_x, GRID_COLS - 1 - shape_max_x)
             grid_y = GRID_ROWS - 1 - shape_max_y  # 모양의 아래쪽 끝이 화면 아래에 오도록
         
-        enemy = Enemy(grid_x, grid_y, color, shape)
+        enemy = Enemy(grid_x, grid_y, color, shape, hp=ENEMY_HP)
         self.enemies.append(enemy)
     
     def spawn_health_potion(self):
@@ -240,6 +243,12 @@ class Game:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
+            
+            # 키 입력 처리
+            if event.type == pygame.KEYDOWN:
+                # H 키로 체력바 표시 토글
+                if event.key == pygame.K_h:
+                    self.show_hp_bars = not self.show_hp_bars
             
             # 게임 오버 상태에서 재시작 또는 종료
             if self.game_over:
@@ -329,17 +338,27 @@ class Game:
         
         # 적들 그리기
         for enemy in self.enemies:
-            enemy.draw(self.screen)
+            if self.show_hp_bars:
+                enemy.draw_with_hp_bar(self.screen)
+            else:
+                enemy.draw(self.screen)
         
         # 플레이어 그리기
-        self.player.draw(self.screen)
+        if self.show_hp_bars:
+            self.player.draw_with_hp_bar(self.screen)
+        else:
+            self.player.draw(self.screen)
         
         # 무기 공격 이펙트 그리기
         player_center = self.player.get_center()
         self.sword.draw_attack_effect(self.screen, player_center)
         
-        # 체력바 그리기
+        # 체력바 그리기 (화면 상단)
         self.player.draw_hp_bar(self.screen)
+        
+        # 체력바 토글 힌트 표시
+        hp_hint_text = self.small_font.render("Press H to toggle HP bars", True, WHITE)
+        self.screen.blit(hp_hint_text, (SCREEN_WIDTH - 300, 10))
         
         # 적 개수 표시
         enemy_count_text = self.small_font.render(f"Enemies: {len(self.enemies)}", True, WHITE)

@@ -133,3 +133,35 @@ class GameObject:
             if abs_x < 0 or abs_x >= GRID_COLS or abs_y < 0 or abs_y >= GRID_ROWS:
                 return False
         return True
+    
+    def draw_hp_bar_above(self, screen, hp, max_hp):
+        """
+        객체 머리 위에 작은 체력바 그리기
+        
+        Args:
+            screen: pygame screen 객체
+            hp: 현재 체력
+            max_hp: 최대 체력
+        """
+        if max_hp <= 0:
+            return
+        
+        # 경계 상자 가져오기
+        min_x, min_y, max_x, max_y = self.get_bounding_box()
+        
+        # 체력바 위치 (객체 위쪽, 픽셀 단위)
+        bar_width = (max_x - min_x + 1) * GRID_WIDTH
+        bar_height = 5
+        bar_x = min_x * GRID_WIDTH
+        bar_y = min_y * GRID_HEIGHT - bar_height - 3  # 객체 위 3픽셀 간격
+        
+        # 배경 (빨간색 - 잃은 체력)
+        pygame.draw.rect(screen, (200, 0, 0), (bar_x, bar_y, bar_width, bar_height))
+        
+        # 현재 체력 (녹색)
+        hp_ratio = hp / max_hp
+        current_width = int(bar_width * hp_ratio)
+        pygame.draw.rect(screen, (0, 200, 0), (bar_x, bar_y, current_width, bar_height))
+        
+        # 테두리 (검은색)
+        pygame.draw.rect(screen, (0, 0, 0), (bar_x, bar_y, bar_width, bar_height), 1)

@@ -260,3 +260,15 @@ class Enemy(GameObject):
             bool: 죽었으면 True
         """
         return self.hp <= 0
+    
+    def draw_with_hp_bar(self, screen):
+        """
+        적을 그리고 머리 위에 체력바 그리기
+        
+        Args:
+            screen: pygame screen 객체
+        """
+        # 기본 그리기
+        self.draw(screen)
+        # 머리 위 체력바
+        self.draw_hp_bar_above(screen, self.hp, self.max_hp)

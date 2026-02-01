@@ -103,6 +103,9 @@ HEALTH_POTION_SPAWN_INTERVAL = 15000  # 밀리초 (15초)
 OBSTACLE_COLOR = (100, 100, 100)  # 회색
 NUM_OBSTACLES = 10  # 맵에 생성할 장애물 개수
 
+# 적 HP 설정
+ENEMY_HP = 100  # 적의 기본 체력
+
 # 무기 설정 - Sword
 SWORD_DAMAGE = 50  # 공격력
 SWORD_COOLDOWN = 1.0  # 초 (자동 발동 간격)

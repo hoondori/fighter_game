@@ -138,3 +138,15 @@ class Player(GameObject):
         font = pygame.font.Font(None, 24)
         hp_text = font.render(f"HP: {int(self.hp)}/{self.max_hp}", True, WHITE)
         screen.blit(hp_text, (bar_x + bar_width + 10, bar_y))
+    
+    def draw_with_hp_bar(self, screen):
+        """
+        플레이어를 그리고 머리 위에 체력바 그리기
+        
+        Args:
+            screen: pygame screen 객체
+        """
+        # 기본 그리기
+        self.draw(screen)
+        # 머리 위 체력바
+        self.draw_hp_bar_above(screen, self.hp, self.max_hp)
