@@ -78,7 +78,7 @@ class Sword(Weapon):
     
     def attack(self, player_pos, enemies):
         """
-        원형 범위 내 적들에게 데미지
+        원형 범위 내 적들에게 데미지 및 녹백
         
         Args:
             player_pos: 플레이어 중심 좌표 (그리드)
@@ -99,9 +99,9 @@ class Sword(Weapon):
                 (enemy_center_y - player_y)**2
             )
             
-            # 범위 내면 데미지
+            # 범위 내면 데미지 및 녹백
             if distance <= self.range:
-                enemy.take_damage(self.damage)
+                enemy.take_damage(self.damage, knockback_from=player_pos)
                 hit_enemies.append(enemy)
         
         # 공격 이펙트 활성화

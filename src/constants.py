@@ -84,7 +84,7 @@ PLAYER_COLLISION_DAMAGE = 10  # 적과 충돌 시 받는 데미지
 
 # 적 설정 (그리드 단위)
 ENEMY_GRID_SIZE = 1  # 그리드 셀 단위
-ENEMY_SPEED_GRID = 0.15  # 한 프레임당 이동 그리드 (느리게 조정)
+ENEMY_SPEED_GRID = 0.1  # 한 프레임당 이동 그리드 (더 느리게 조정)
 ENEMY_COLOR = RED
 ENEMY_SPAWN_INTERVAL = 2000  # 밀리초 (2초)
 MAX_ENEMIES = 30  # 최대 적 개수 제한
@@ -109,5 +109,8 @@ ENEMY_HP = 100  # 적의 기본 체력
 # 무기 설정 - Sword
 SWORD_DAMAGE = 50  # 공격력
 SWORD_COOLDOWN = 1.0  # 초 (자동 발동 간격)
-SWORD_RANGE = 3.0  # 공격 범위 (그리드 단위)
+SWORD_RANGE = 5.0  # 공격 범위 (그리드 단위)
 SWORD_EFFECT_COLOR = (255, 255, 100)  # 노란색 계열
+
+# 녹백 설정
+KNOCKBACK_DISTANCE = 5.0  # 데미지 받을 때 밀려나는 거리 (그리드 단위)

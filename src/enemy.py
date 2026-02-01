@@ -237,12 +237,13 @@ class Enemy(GameObject):
         self.grid_x = old_x
         self.grid_y = old_y
     
-    def take_damage(self, damage):
+    def take_damage(self, damage, knockback_from=None):
         """
-        데미지를 받음
+        데미지를 받음 (녹백 효과 포함)
         
         Args:
             damage: 받을 데미지 양
+            knockback_from: 녹백 발생 위치 (grid_x, grid_y) - 이 위치로부터 멀어짐
         
         Returns:
             bool: 아직 살아있으면 True, 죽었으면 False
@@ -250,6 +251,31 @@ class Enemy(GameObject):
         self.hp -= damage
         if self.hp < 0:
             self.hp = 0
+        
+        # 녹백 효과 적용
+        if knockback_from is not None and self.hp > 0:
+            from src.constants import KNOCKBACK_DISTANCE
+            source_x, source_y = knockback_from
+            
+            # 방향 벡터 계산 (소스로부터 멀어지는 방향)
+            dx = self.grid_x - source_x
+            dy = self.grid_y - source_y
+            
+            # 정규화
+            distance = math.sqrt(dx**2 + dy**2)
+            if distance > 0:
+                dx /= distance
+                dy /= distance
+                
+                # 녹백 적용
+                new_x = self.grid_x + dx * KNOCKBACK_DISTANCE
+                new_y = self.grid_y + dy * KNOCKBACK_DISTANCE
+                
+                # 경계 및 유효성 체크
+                if self.is_valid_position(new_x, new_y):
+                    self.grid_x = new_x
+                    self.grid_y = new_y
+        
         return self.hp > 0
     
     def is_dead(self):
