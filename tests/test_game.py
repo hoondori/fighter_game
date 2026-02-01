@@ -96,7 +96,7 @@ class TestCollisionDetection:
         assert game.game_over is False
     
     def test_collision_detection(self, init_pygame):
-        """충돌 감지 테스트"""
+        """충돌 감지 테스트 (Version 2: HP 시스템)"""
         game = Game()
         game.enemies = []
         
@@ -112,9 +112,16 @@ class TestCollisionDetection:
         )
         game.enemies.append(enemy)
         
-        # 충돌 확인
+        # 충돌 확인 (데미지를 받지만 즉시 게임 오버는 아님)
+        initial_hp = game.player.hp
         assert game.check_collision() is True
-        assert game.game_over is True
+        assert game.player.hp < initial_hp  # HP 감소
+        
+        # 여러 번 충돌하면 게임 오버
+        for _ in range(20):
+            game.collision_cooldown = 0  # 쿨다운 무시
+            game.check_collision()
+        assert game.game_over is True  # HP가 0이 되어 게임 오버
     
     def test_no_collision_when_far(self, init_pygame):
         """거리가 멀 때 충돌하지 않는지 테스트"""

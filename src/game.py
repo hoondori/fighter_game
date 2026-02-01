@@ -8,10 +8,15 @@ from src.constants import (
     SCREEN_WIDTH, SCREEN_HEIGHT, FPS,
     GRID_WIDTH, GRID_HEIGHT, GRID_COLS, GRID_ROWS,
     BLACK, WHITE, GAME_TITLE, ENEMY_SPAWN_INTERVAL,
-    ENEMY_SHAPES, ENEMY_COLORS, MAX_ENEMIES
+    ENEMY_SHAPES, ENEMY_COLORS, MAX_ENEMIES,
+    HEALTH_POTION_SPAWN_INTERVAL, NUM_OBSTACLES,
+    PLAYER_COLLISION_DAMAGE
 )
 from src.player import Player
 from src.enemy import Enemy
+from src.obstacle import Obstacle
+from src.health_potion import HealthPotion
+from src.weapon import Sword
 
 
 class Game:
@@ -38,6 +43,16 @@ class Game:
         # 적 리스트
         self.enemies = []
         
+        # 장애물 리스트
+        self.obstacles = []
+        self.spawn_obstacles()
+        
+        # 체력 회복 아이템 리스트
+        self.health_potions = []
+        
+        # 무기 (Sword)
+        self.sword = Sword()
+        
         # 게임 상태
         self.running = True
         self.game_over = False
@@ -45,9 +60,59 @@ class Game:
         # 적 spawn 타이머
         self.last_spawn_time = pygame.time.get_ticks()
         
+        # 체력 회복 아이템 spawn 타이머
+        self.last_potion_spawn_time = pygame.time.get_ticks()
+        
+        # 충돌 데미지 쿨다운 (너무 빠른 연속 데미지 방지)
+        self.collision_cooldown = 0
+        self.collision_cooldown_max = 30  # 프레임 수 (0.5초)
+        
         # 폰트 설정 (게임 오버 메시지용)
         self.font = pygame.font.Font(None, 74)
         self.small_font = pygame.font.Font(None, 36)
+        
+        # delta time 추적
+        self.last_time = pygame.time.get_ticks() / 1000.0
+        
+        # 배경 음악 로드 및 재생
+        self.load_music()
+    
+    def load_music(self):
+        """배경 음악 로드 및 재생"""
+        try:
+            # 음악 파일이 있으면 로드
+            music_path = "assets/bgm.mp3"
+            import os
+            if os.path.exists(music_path):
+                pygame.mixer.music.load(music_path)
+                pygame.mixer.music.play(-1)  # 무한 반복
+                pygame.mixer.music.set_volume(0.5)  # 볼륨 50%
+        except Exception as e:
+            # 음악 파일이 없어도 게임은 계속 진행
+            print(f"배경 음악 로드 실패 (선택 사항): {e}")
+    
+    def spawn_obstacles(self):
+        """맵에 장애물 생성 (플레이어 주변은 피함)"""
+        for _ in range(NUM_OBSTACLES):
+            # 장애물 크기 랜덤 (2~5 그리드)
+            width = random.randint(2, 5)
+            height = random.randint(2, 5)
+            
+            # 랜덤 위치 (플레이어와 일정 거리 유지)
+            while True:
+                grid_x = random.randint(5, GRID_COLS - width - 5)
+                grid_y = random.randint(5, GRID_ROWS - height - 5)
+                
+                # 플레이어 중심에서 일정 거리 이상 떨어져 있는지 확인
+                player_center_x = GRID_COLS // 2
+                player_center_y = GRID_ROWS // 2
+                distance = math.sqrt((grid_x - player_center_x)**2 + (grid_y - player_center_y)**2)
+                
+                if distance > 10:  # 플레이어로부터 10 그리드 이상 떨어짐
+                    break
+            
+            obstacle = Obstacle(grid_x, grid_y, width, height)
+            self.obstacles.append(obstacle)
     
     def spawn_enemy(self):
         """화면 경계에서 적을 spawn (그리드 좌표, 다양한 모양)"""
@@ -88,15 +153,58 @@ class Game:
         enemy = Enemy(grid_x, grid_y, color, shape)
         self.enemies.append(enemy)
     
+    def spawn_health_potion(self):
+        """체력 회복 아이템 생성 (장애물과 겹치지 않게)"""
+        max_attempts = 10
+        for _ in range(max_attempts):
+            grid_x = random.randint(5, GRID_COLS - 8)
+            grid_y = random.randint(5, GRID_ROWS - 8)
+            
+            # 임시 포션 생성
+            temp_potion = HealthPotion(grid_x, grid_y)
+            
+            # 장애물과 겹치는지 확인
+            collides = False
+            for obstacle in self.obstacles:
+                if temp_potion.collides_with(obstacle):
+                    collides = True
+                    break
+            
+            if not collides:
+                self.health_potions.append(temp_potion)
+                break
+    
     def check_collision(self):
         """플레이어와 적의 충돌 판정 (그리드 기반 정밀 충돌)"""
+        # 쿨다운 감소
+        if self.collision_cooldown > 0:
+            self.collision_cooldown -= 1
+            return False
+        
         # 그리드 기반 정밀 충돌 판정 사용
         for enemy in self.enemies:
             if self.player.collides_with(enemy):
-                self.game_over = True
+                # 데미지 받음
+                if not self.player.take_damage(PLAYER_COLLISION_DAMAGE):
+                    self.game_over = True
+                
+                # 쿨다운 설정
+                self.collision_cooldown = self.collision_cooldown_max
                 return True
         
         return False
+    
+    def check_health_potion_pickup(self):
+        """체력 회복 아이템 획득 체크"""
+        for potion in self.health_potions[:]:
+            if self.player.collides_with(potion):
+                self.player.heal(potion.heal_amount)
+                self.health_potions.remove(potion)
+    
+    def check_weapon_hit(self):
+        """무기 공격 판정 및 죽은 적 제거"""
+        # 죽은 적 제거
+        self.enemies = [enemy for enemy in self.enemies if not enemy.is_dead()]
     
     def handle_events(self):
         """이벤트 처리"""
@@ -117,6 +225,11 @@ class Game:
         if self.game_over:
             return
         
+        # Delta time 계산
+        current_time = pygame.time.get_ticks() / 1000.0
+        dt = current_time - self.last_time
+        self.last_time = current_time
+        
         # 키 입력 처리
         keys = pygame.key.get_pressed()
         
@@ -124,14 +237,27 @@ class Game:
         if keys[pygame.K_ESCAPE]:
             self.running = False
         
-        # 플레이어 이동
-        self.player.move(keys)
+        # 플레이어 이동 (장애물 포함)
+        self.player.move(keys, self.obstacles)
         
         # 적 spawn (일정 시간마다)
-        current_time = pygame.time.get_ticks()
-        if current_time - self.last_spawn_time > ENEMY_SPAWN_INTERVAL:
+        current_time_ms = pygame.time.get_ticks()
+        if current_time_ms - self.last_spawn_time > ENEMY_SPAWN_INTERVAL:
             self.spawn_enemy()
-            self.last_spawn_time = current_time
+            self.last_spawn_time = current_time_ms
+        
+        # 체력 회복 아이템 spawn (일정 시간마다)
+        if current_time_ms - self.last_potion_spawn_time > HEALTH_POTION_SPAWN_INTERVAL:
+            self.spawn_health_potion()
+            self.last_potion_spawn_time = current_time_ms
+        
+        # 무기 업데이트
+        self.sword.update(dt)
+        
+        # 무기 자동 발동
+        if self.sword.can_attack():
+            player_center = self.player.get_center()
+            self.sword.attack(player_center, self.enemies)
         
         # 적 이동: 모든 적들과 충돌 체크 (거리 기반 최적화는 유지)
         # 먼 적부터 이동하여 앞쪽 적들이 먼저 자리 잡도록 함
@@ -146,24 +272,45 @@ class Game:
                 reverse=True
             )
             
-            # 각 적은 모든 다른 적들과 충돌 체크 (거리 최적화로 실제 체크는 적음)
+            # 각 적은 모든 다른 적들 및 장애물과 충돌 체크
             for enemy in sorted_enemies:
-                enemy.move_towards_player(self.player, self.enemies)
+                enemy.move_towards_player(self.player, self.enemies, self.obstacles)
         
         # 충돌 판정
         self.check_collision()
+        
+        # 체력 회복 아이템 획득
+        self.check_health_potion_pickup()
+        
+        # 무기 공격으로 죽은 적 제거
+        self.check_weapon_hit()
     
     def draw(self):
         """화면 렌더링"""
         # 화면 클리어 (검은색 배경)
         self.screen.fill(BLACK)
         
-        # 플레이어 그리기
-        self.player.draw(self.screen)
+        # 장애물 그리기
+        for obstacle in self.obstacles:
+            obstacle.draw(self.screen)
+        
+        # 체력 회복 아이템 그리기
+        for potion in self.health_potions:
+            potion.draw(self.screen)
         
         # 적들 그리기
         for enemy in self.enemies:
             enemy.draw(self.screen)
+        
+        # 플레이어 그리기
+        self.player.draw(self.screen)
+        
+        # 무기 공격 이펙트 그리기
+        player_center = self.player.get_center()
+        self.sword.draw_attack_effect(self.screen, player_center)
+        
+        # 체력바 그리기
+        self.player.draw_hp_bar(self.screen)
         
         # 적 개수 표시
         enemy_count_text = self.small_font.render(f"Enemies: {len(self.enemies)}", True, WHITE)

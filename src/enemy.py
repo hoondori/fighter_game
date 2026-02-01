@@ -9,7 +9,7 @@ from src.constants import ENEMY_SPEED_GRID
 class Enemy(GameObject):
     """플레이어를 추적하는 적 캐릭터 (그리드 기반, 부드러운 이동, 다양한 모양)"""
     
-    def __init__(self, grid_x, grid_y, color, shape=None):
+    def __init__(self, grid_x, grid_y, color, shape=None, hp=1):
         """
         적 초기화
         
@@ -18,6 +18,7 @@ class Enemy(GameObject):
             grid_y: 기준점 그리드 y 좌표 (float 가능)
             color: 적의 색상
             shape: 상대 좌표 리스트 [(0,0), (1,0), ...] 또는 None (1x1 정사각형)
+            hp: 체력 (기본값 1)
         """
         if shape is None:
             shape = [(0, 0)]  # 기본: 1x1 정사각형
@@ -28,6 +29,10 @@ class Enemy(GameObject):
         # float 좌표 지원 (부드러운 이동)
         self.grid_x = float(grid_x)
         self.grid_y = float(grid_y)
+        
+        # HP 시스템
+        self.max_hp = hp
+        self.hp = hp
     
     def get_grid_positions(self):
         """
@@ -38,15 +43,16 @@ class Enemy(GameObject):
         """
         return [(int(self.grid_x + dx), int(self.grid_y + dy)) for dx, dy in self.shape]
     
-    def move_towards_player(self, player, other_enemies=None):
+    def move_towards_player(self, player, other_enemies=None, obstacles=None):
         """
-        플레이어를 향해 직선으로 이동 (다른 적들과 겹치지 않게)
+        플레이어를 향해 직선으로 이동 (다른 적들과 겹치지 않게, 장애물 회피)
         최적화: 거리 기반 조기 컷오프로 불필요한 충돌 체크 감소
         Lock-in 방지: 이미 겹쳐있는 경우 벗어나는 방향 이동 허용
         
         Args:
             player: Player 객체
             other_enemies: 다른 적들의 리스트 (충돌 체크용)
+            obstacles: 장애물 리스트 (충돌 체크용)
         """
         # 플레이어의 중심점 계산
         player_center_x, player_center_y = player.get_center()
@@ -86,6 +92,13 @@ class Enemy(GameObject):
                 from src.constants import GRID_COLS, GRID_ROWS, COLLISION_CHECK_DISTANCE
                 if min(xs) < 0 or max(xs) >= GRID_COLS or min(ys) < 0 or max(ys) >= GRID_ROWS:
                     move_valid = False
+            
+            # 장애물과 충돌하는지 체크
+            if move_valid and obstacles:
+                for obstacle in obstacles:
+                    if self.collides_with(obstacle):
+                        move_valid = False
+                        break
             
             # 다른 적들과 충돌하는지 체크 (최적화: 거리 기반 조기 컷오프)
             if move_valid and other_enemies:
@@ -132,3 +145,27 @@ class Enemy(GameObject):
             if not move_valid:
                 self.grid_x = old_x
                 self.grid_y = old_y
+    
+    def take_damage(self, damage):
+        """
+        데미지를 받음
+        
+        Args:
+            damage: 받을 데미지 양
+        
+        Returns:
+            bool: 아직 살아있으면 True, 죽었으면 False
+        """
+        self.hp -= damage
+        if self.hp < 0:
+            self.hp = 0
+        return self.hp > 0
+    
+    def is_dead(self):
+        """
+        죽었는지 확인
+        
+        Returns:
+            bool: 죽었으면 True
+        """
+        return self.hp <= 0

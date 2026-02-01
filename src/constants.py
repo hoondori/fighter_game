@@ -77,8 +77,10 @@ ENEMY_COLORS = [
 
 # 플레이어 설정 (그리드 단위)
 PLAYER_GRID_SIZE = 1  # 그리드 셀 단위
-PLAYER_SPEED_GRID = 1  # 한 번 이동 시 그리드 셀 개수
+PLAYER_SPEED_GRID = 0.3  # 한 프레임당 이동 그리드 (부드러운 이동)
 PLAYER_COLOR = BLUE
+PLAYER_MAX_HP = 100  # 최대 체력
+PLAYER_COLLISION_DAMAGE = 10  # 적과 충돌 시 받는 데미지
 
 # 적 설정 (그리드 단위)
 ENEMY_GRID_SIZE = 1  # 그리드 셀 단위
@@ -89,4 +91,20 @@ MAX_ENEMIES = 30  # 최대 적 개수 제한
 COLLISION_CHECK_DISTANCE = 5  # 충돌 체크 거리 (그리드 단위, 이 거리 이상은 충돌 불가능)
 
 # 게임 타이틀
-GAME_TITLE = "Fighter Game - Version 1"
+GAME_TITLE = "Fighter Game - Version 2"
+
+# 체력 회복 아이템 설정
+HEALTH_POTION_SIZE = 1  # 그리드 셀 단위
+HEALTH_POTION_COLOR = GREEN
+HEALTH_POTION_HEAL = 20  # 회복량
+HEALTH_POTION_SPAWN_INTERVAL = 5000  # 밀리초 (5초)
+
+# 장애물 설정
+OBSTACLE_COLOR = (100, 100, 100)  # 회색
+NUM_OBSTACLES = 10  # 맵에 생성할 장애물 개수
+
+# 무기 설정 - Sword
+SWORD_DAMAGE = 50  # 공격력
+SWORD_COOLDOWN = 1.0  # 초 (자동 발동 간격)
+SWORD_RANGE = 3.0  # 공격 범위 (그리드 단위)
+SWORD_EFFECT_COLOR = (255, 255, 100)  # 노란색 계열

@@ -165,3 +165,99 @@ class TestEnemyBehavior:
             
             # 거리가 줄어들어야 함 (플레이어가 멈춰있으므로)
             assert new_distance < prev_distance or abs(new_distance - prev_distance) < 0.1
+
+
+class TestEnemyHP:
+    """적 HP 시스템 테스트 (Version 2)"""
+    
+    def test_initial_hp(self, init_pygame):
+        """초기 HP 테스트"""
+        enemy = Enemy(grid_x=0, grid_y=0, color=RED, hp=50)
+        assert enemy.hp == 50
+        assert enemy.max_hp == 50
+    
+    def test_default_hp(self, enemy):
+        """기본 HP 테스트"""
+        assert enemy.hp == 1
+        assert enemy.max_hp == 1
+    
+    def test_take_damage(self, init_pygame):
+        """데미지 받기 테스트"""
+        enemy = Enemy(grid_x=0, grid_y=0, color=RED, hp=100)
+        alive = enemy.take_damage(30)
+        assert enemy.hp == 70
+        assert alive
+    
+    def test_death(self, init_pygame):
+        """죽음 테스트"""
+        enemy = Enemy(grid_x=0, grid_y=0, color=RED, hp=50)
+        alive = enemy.take_damage(50)
+        assert enemy.hp == 0
+        assert not alive
+        assert enemy.is_dead()
+    
+    def test_overkill(self, init_pygame):
+        """오버킬 테스트 (HP보다 큰 데미지)"""
+        enemy = Enemy(grid_x=0, grid_y=0, color=RED, hp=50)
+        enemy.take_damage(100)
+        assert enemy.hp == 0
+        assert enemy.is_dead()
+
+
+class TestEnemyObstacleAvoidance:
+    """적 장애물 회피 테스트 (Version 2)"""
+    
+    def test_obstacle_blocks_enemy(self, init_pygame):
+        """장애물이 적 이동을 막음 테스트"""
+        from src.obstacle import Obstacle
+        
+        enemy = Enemy(grid_x=10, grid_y=10, color=RED)
+        player = Player(grid_x=20, grid_y=10)
+        obstacle = Obstacle(grid_x=15, grid_y=10, width=3, height=3)
+        
+        initial_x = enemy.grid_x
+        
+        # 여러 번 이동 시도
+        for _ in range(100):
+            enemy.move_towards_player(player, obstacles=[obstacle])
+        
+        # 장애물 앞에서 멈춤 (완전히 막히거나 우회)
+        # 적이 장애물을 통과하지 않음
+        assert enemy.grid_x < 15
+    
+    def test_enemy_avoids_multiple_obstacles(self, init_pygame):
+        """여러 장애물 회피 테스트"""
+        from src.obstacle import Obstacle
+        
+        enemy = Enemy(grid_x=10, grid_y=10, color=RED)
+        player = Player(grid_x=30, grid_y=10)
+        obstacles = [
+            Obstacle(grid_x=15, grid_y=10, width=2, height=2),
+            Obstacle(grid_x=20, grid_y=10, width=2, height=2)
+        ]
+        
+        # 여러 번 이동
+        for _ in range(50):
+            enemy.move_towards_player(player, obstacles=obstacles)
+        
+        # 적이 움직였지만 장애물 안에 있지 않음
+        for obstacle in obstacles:
+            assert not enemy.collides_with(obstacle)
+    
+    def test_enemy_with_obstacles_and_other_enemies(self, init_pygame):
+        """장애물과 다른 적들 모두 고려한 이동 테스트"""
+        from src.obstacle import Obstacle
+        
+        enemy1 = Enemy(grid_x=10, grid_y=10, color=RED)
+        enemy2 = Enemy(grid_x=12, grid_y=10, color=RED)
+        player = Player(grid_x=20, grid_y=10)
+        obstacle = Obstacle(grid_x=15, grid_y=10, width=2, height=2)
+        
+        # 두 적 모두 이동
+        for _ in range(10):
+            enemy1.move_towards_player(player, [enemy1, enemy2], [obstacle])
+            enemy2.move_towards_player(player, [enemy1, enemy2], [obstacle])
+        
+        # 적들이 장애물을 통과하지 않음
+        assert not enemy1.collides_with(obstacle)
+        assert not enemy2.collides_with(obstacle)
