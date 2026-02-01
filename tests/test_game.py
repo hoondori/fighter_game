@@ -92,11 +92,15 @@ class TestCollisionDetection:
         game = Game()
         game.enemies = []
         
-        # 플레이어 위치에 적 spawn
+        # 플레이어의 + 모양 중 한 위치에 적 spawn
+        # PLAYER_SHAPE = [(1, 0), (0, 1), (1, 1), (2, 1), (1, 2)]
+        # (1, 1) 위치에 적을 배치하면 확실히 충돌
         from src.enemy import Enemy
+        from src.constants import RED
         enemy = Enemy(
-            grid_x=game.player.grid_x,
-            grid_y=game.player.grid_y
+            grid_x=game.player.grid_x + 1,
+            grid_y=game.player.grid_y + 1,
+            color=RED
         )
         game.enemies.append(enemy)
         
@@ -110,7 +114,8 @@ class TestCollisionDetection:
         game.enemies = []
         
         from src.enemy import Enemy
-        enemy = Enemy(grid_x=0, grid_y=0)
+        from src.constants import RED
+        enemy = Enemy(grid_x=0, grid_y=0, color=RED)
         game.enemies.append(enemy)
         
         # 충돌하지 않음

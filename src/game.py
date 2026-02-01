@@ -6,7 +6,8 @@ import sys
 from src.constants import (
     SCREEN_WIDTH, SCREEN_HEIGHT, FPS,
     GRID_WIDTH, GRID_HEIGHT, GRID_COLS, GRID_ROWS,
-    BLACK, WHITE, GAME_TITLE, ENEMY_SPAWN_INTERVAL
+    BLACK, WHITE, GAME_TITLE, ENEMY_SPAWN_INTERVAL,
+    ENEMY_SHAPES, ENEMY_COLORS
 )
 from src.player import Player
 from src.enemy import Enemy
@@ -48,32 +49,45 @@ class Game:
         self.small_font = pygame.font.Font(None, 36)
     
     def spawn_enemy(self):
-        """화면 경계에서 적을 spawn (그리드 좌표)"""
+        """화면 경계에서 적을 spawn (그리드 좌표, 다양한 모양)"""
+        # 랜덤으로 모양 선택 (위치 조정을 위해 먼저 선택)
+        shape_index = random.randint(0, len(ENEMY_SHAPES) - 1)
+        shape = ENEMY_SHAPES[shape_index]
+        color = ENEMY_COLORS[shape_index]
+        
+        # 모양의 경계 상자 계산
+        if shape:
+            xs = [dx for dx, dy in shape]
+            ys = [dy for dx, dy in shape]
+            shape_min_x, shape_max_x = min(xs), max(xs)
+            shape_min_y, shape_max_y = min(ys), max(ys)
+        else:
+            shape_min_x = shape_max_x = shape_min_y = shape_max_y = 0
+        
         # 랜덤으로 spawn 위치 선택 (0: 왼쪽, 1: 오른쪽, 2: 위, 3: 아래)
         side = random.randint(0, 3)
         
         if side == 0:  # 왼쪽
-            grid_x = 0
-            grid_y = random.randint(0, GRID_ROWS - 1)
+            grid_x = -shape_min_x  # 모양의 왼쪽 끝이 화면 왼쪽에 오도록
+            grid_y = random.randint(-shape_min_y, GRID_ROWS - 1 - shape_max_y)
         elif side == 1:  # 오른쪽
-            grid_x = GRID_COLS - 1
-            grid_y = random.randint(0, GRID_ROWS - 1)
+            grid_x = GRID_COLS - 1 - shape_max_x  # 모양의 오른쪽 끝이 화면 오른쪽에 오도록
+            grid_y = random.randint(-shape_min_y, GRID_ROWS - 1 - shape_max_y)
         elif side == 2:  # 위
-            grid_x = random.randint(0, GRID_COLS - 1)
-            grid_y = 0
+            grid_x = random.randint(-shape_min_x, GRID_COLS - 1 - shape_max_x)
+            grid_y = -shape_min_y  # 모양의 위쪽 끝이 화면 위에 오도록
         else:  # 아래
-            grid_x = random.randint(0, GRID_COLS - 1)
-            grid_y = GRID_ROWS - 1
+            grid_x = random.randint(-shape_min_x, GRID_COLS - 1 - shape_max_x)
+            grid_y = GRID_ROWS - 1 - shape_max_y  # 모양의 아래쪽 끝이 화면 아래에 오도록
         
-        enemy = Enemy(grid_x, grid_y)
+        enemy = Enemy(grid_x, grid_y, color, shape)
         self.enemies.append(enemy)
     
     def check_collision(self):
-        """플레이어와 적의 충돌 판정"""
-        player_rect = self.player.get_rect()
-        
+        """플레이어와 적의 충돌 판정 (그리드 기반 정밀 충돌)"""
+        # 그리드 기반 정밀 충돌 판정 사용
         for enemy in self.enemies:
-            if player_rect.colliderect(enemy.get_rect()):
+            if self.player.collides_with(enemy):
                 self.game_over = True
                 return True
         
