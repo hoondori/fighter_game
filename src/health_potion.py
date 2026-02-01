@@ -16,11 +16,11 @@ class HealthPotion(GameObject):
             grid_x: 기준점 그리드 x 좌표
             grid_y: 기준점 그리드 y 좌표
         """
-        # 십자 모양
+        # H 모양 (Health를 나타냄, 플레이어/적과 확실히 구별)
         shape = [
-            (0, 1),           # 위
-            (1, 0), (1, 1), (1, 2),  # 중간 가로
-            (2, 1)            # 아래
+            (0, 0), (0, 1), (0, 2),  # 왼쪽 세로 줄
+                    (1, 1),           # 중간 가로
+            (2, 0), (2, 1), (2, 2)   # 오른쪽 세로 줄
         ]
         super().__init__(grid_x, grid_y, HEALTH_POTION_COLOR, grid_size=1, shape=shape)
         self.heal_amount = HEALTH_POTION_HEAL

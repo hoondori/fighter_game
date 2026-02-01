@@ -31,8 +31,8 @@ class TestHealthPotionInitialization:
         assert potion.heal_amount == HEALTH_POTION_HEAL
     
     def test_potion_shape(self, potion):
-        """체력 회복 아이템 모양 테스트 (십자 모양)"""
-        assert len(potion.shape) == 5  # 십자 = 5 블록
+        """체력 회복 아이템 모양 테스트 (H 모양)"""
+        assert len(potion.shape) == 7  # H 모양 = 7 블록
     
     def test_potion_color(self, potion):
         """체력 회복 아이템 색상 테스트 (녹색)"""
