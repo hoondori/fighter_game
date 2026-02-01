@@ -5,6 +5,7 @@ import random
 import sys
 from src.constants import (
     SCREEN_WIDTH, SCREEN_HEIGHT, FPS,
+    GRID_WIDTH, GRID_HEIGHT, GRID_COLS, GRID_ROWS,
     BLACK, WHITE, GAME_TITLE, ENEMY_SPAWN_INTERVAL
 )
 from src.player import Player
@@ -12,7 +13,7 @@ from src.enemy import Enemy
 
 
 class Game:
-    """게임 메인 클래스"""
+    """게임 메인 클래스 (그리드 기반)"""
     
     def __init__(self):
         """게임 초기화"""
@@ -26,10 +27,10 @@ class Game:
         # 시계 설정 (FPS 제어)
         self.clock = pygame.time.Clock()
         
-        # 플레이어 생성 (화면 중앙)
+        # 플레이어 생성 (그리드 중앙)
         self.player = Player(
-            x=SCREEN_WIDTH // 2,
-            y=SCREEN_HEIGHT // 2
+            grid_x=GRID_COLS // 2,
+            grid_y=GRID_ROWS // 2
         )
         
         # 적 리스트
@@ -47,24 +48,24 @@ class Game:
         self.small_font = pygame.font.Font(None, 36)
     
     def spawn_enemy(self):
-        """화면 경계에서 적을 spawn"""
+        """화면 경계에서 적을 spawn (그리드 좌표)"""
         # 랜덤으로 spawn 위치 선택 (0: 왼쪽, 1: 오른쪽, 2: 위, 3: 아래)
         side = random.randint(0, 3)
         
         if side == 0:  # 왼쪽
-            x = 0
-            y = random.randint(0, SCREEN_HEIGHT)
+            grid_x = 0
+            grid_y = random.randint(0, GRID_ROWS - 1)
         elif side == 1:  # 오른쪽
-            x = SCREEN_WIDTH
-            y = random.randint(0, SCREEN_HEIGHT)
+            grid_x = GRID_COLS - 1
+            grid_y = random.randint(0, GRID_ROWS - 1)
         elif side == 2:  # 위
-            x = random.randint(0, SCREEN_WIDTH)
-            y = 0
+            grid_x = random.randint(0, GRID_COLS - 1)
+            grid_y = 0
         else:  # 아래
-            x = random.randint(0, SCREEN_WIDTH)
-            y = SCREEN_HEIGHT
+            grid_x = random.randint(0, GRID_COLS - 1)
+            grid_y = GRID_ROWS - 1
         
-        enemy = Enemy(x, y)
+        enemy = Enemy(grid_x, grid_y)
         self.enemies.append(enemy)
     
     def check_collision(self):

@@ -3,7 +3,7 @@
 import pytest
 import pygame
 from src.game import Game
-from src.constants import SCREEN_WIDTH, SCREEN_HEIGHT
+from src.constants import GRID_COLS, GRID_ROWS
 
 
 @pytest.fixture(scope="module")
@@ -33,9 +33,9 @@ class TestGameInitialization:
         assert game.game_over is False
     
     def test_player_start_position(self, game):
-        """플레이어 시작 위치 테스트 (화면 중앙)"""
-        assert game.player.x == SCREEN_WIDTH // 2
-        assert game.player.y == SCREEN_HEIGHT // 2
+        """플레이어 시작 위치 테스트 (그리드 중앙)"""
+        assert game.player.grid_x == GRID_COLS // 2
+        assert game.player.grid_y == GRID_ROWS // 2
     
     def test_font_initialization(self, game):
         """폰트 초기화 테스트"""
@@ -62,18 +62,18 @@ class TestEnemySpawning:
         assert len(game.enemies) == 5
     
     def test_spawned_enemy_at_screen_edge(self, game):
-        """spawn된 적이 화면 가장자리에 있는지 테스트"""
+        """spawn된 적이 그리드 가장자리에 있는지 테스트"""
         game.enemies = []
         game.spawn_enemy()
         
         enemy = game.enemies[0]
         
-        # 화면 가장자리에 spawn되어야 함
+        # 그리드 가장자리에 spawn되어야 함
         at_edge = (
-            enemy.x <= 0 or 
-            enemy.x >= SCREEN_WIDTH or 
-            enemy.y <= 0 or 
-            enemy.y >= SCREEN_HEIGHT
+            enemy.grid_x == 0 or 
+            enemy.grid_x == GRID_COLS - 1 or 
+            enemy.grid_y == 0 or 
+            enemy.grid_y == GRID_ROWS - 1
         )
         assert at_edge
 
@@ -95,10 +95,8 @@ class TestCollisionDetection:
         # 플레이어 위치에 적 spawn
         from src.enemy import Enemy
         enemy = Enemy(
-            x=game.player.x,
-            y=game.player.y,
-            width=25,
-            height=25
+            grid_x=game.player.grid_x,
+            grid_y=game.player.grid_y
         )
         game.enemies.append(enemy)
         
@@ -112,7 +110,7 @@ class TestCollisionDetection:
         game.enemies = []
         
         from src.enemy import Enemy
-        enemy = Enemy(x=0, y=0, width=25, height=25)
+        enemy = Enemy(grid_x=0, grid_y=0)
         game.enemies.append(enemy)
         
         # 충돌하지 않음
