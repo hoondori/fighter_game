@@ -93,6 +93,9 @@ class Game:
     
     def spawn_obstacles(self):
         """맵에 장애물 생성 (플레이어 주변은 피함)"""
+        MIN_OBSTACLE_DISTANCE = 5  # 장애물 간 최소 거리
+        MAX_ATTEMPTS = 100  # 배치 시도 횟수 제한
+        
         for _ in range(NUM_OBSTACLES):
             # 장애물을 벽처럼 만들기 (width 또는 height 중 하나를 길게)
             if random.random() < 0.5:
@@ -104,21 +107,41 @@ class Game:
                 width = random.randint(1, 3)
                 height = random.randint(5, 15)
             
-            # 랜덤 위치 (플레이어와 일정 거리 유지)
-            while True:
+            # 랜덤 위치 (플레이어와 다른 장애물들과 일정 거리 유지)
+            for attempt in range(MAX_ATTEMPTS):
                 grid_x = random.randint(5, GRID_COLS - width - 5)
                 grid_y = random.randint(5, GRID_ROWS - height - 5)
                 
                 # 플레이어 중심에서 일정 거리 이상 떨어져 있는지 확인
                 player_center_x = GRID_COLS // 2
                 player_center_y = GRID_ROWS // 2
-                distance = math.sqrt((grid_x - player_center_x)**2 + (grid_y - player_center_y)**2)
+                distance_to_player = math.sqrt((grid_x - player_center_x)**2 + (grid_y - player_center_y)**2)
                 
-                if distance > 10:  # 플레이어로부터 10 그리드 이상 떨어짐
+                if distance_to_player <= 10:  # 플레이어와 너무 가까움
+                    continue
+                
+                # 다른 장애물들과의 거리 확인
+                too_close = False
+                for existing_obstacle in self.obstacles:
+                    # 각 장애물의 중심 계산
+                    existing_center_x = existing_obstacle.grid_x + existing_obstacle.width / 2
+                    existing_center_y = existing_obstacle.grid_y + existing_obstacle.height / 2
+                    new_center_x = grid_x + width / 2
+                    new_center_y = grid_y + height / 2
+                    
+                    # 중심 간 거리 계산
+                    distance = math.sqrt((new_center_x - existing_center_x)**2 + 
+                                       (new_center_y - existing_center_y)**2)
+                    
+                    if distance < MIN_OBSTACLE_DISTANCE:
+                        too_close = True
+                        break
+                
+                if not too_close:
+                    # 적절한 위치 찾음
+                    obstacle = Obstacle(grid_x, grid_y, width, height)
+                    self.obstacles.append(obstacle)
                     break
-            
-            obstacle = Obstacle(grid_x, grid_y, width, height)
-            self.obstacles.append(obstacle)
     
     def spawn_enemy(self):
         """화면 경계에서 적을 spawn (그리드 좌표, 다양한 모양)"""
