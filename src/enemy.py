@@ -38,12 +38,13 @@ class Enemy(GameObject):
         """
         return [(int(self.grid_x + dx), int(self.grid_y + dy)) for dx, dy in self.shape]
     
-    def move_towards_player(self, player):
+    def move_towards_player(self, player, other_enemies=None):
         """
-        플레이어를 향해 직선으로 이동
+        플레이어를 향해 직선으로 이동 (다른 적들과 겹치지 않게)
         
         Args:
             player: Player 객체
+            other_enemies: 다른 적들의 리스트 (충돌 체크용)
         """
         # 플레이어의 중심점 계산
         player_center_x, player_center_y = player.get_center()
@@ -66,14 +67,15 @@ class Enemy(GameObject):
             new_x = self.grid_x + direction_x * self.speed
             new_y = self.grid_y + direction_y * self.speed
             
-            # 화면 경계 체크 후 이동
-            # 임시로 이동해보고 경계 체크
+            # 이동 가능한지 체크 (경계 + 다른 적들과 충돌)
             old_x, old_y = self.grid_x, self.grid_y
             self.grid_x = new_x
             self.grid_y = new_y
             
-            # 경계를 벗어나면 이동 취소
+            # 경계를 벗어나는지 체크
             positions = self.get_grid_positions()
+            move_valid = True
+            
             if positions:
                 xs = [x for x, y in positions]
                 ys = [y for x, y in positions]
@@ -81,6 +83,16 @@ class Enemy(GameObject):
                 # 경계 체크
                 from src.constants import GRID_COLS, GRID_ROWS
                 if min(xs) < 0 or max(xs) >= GRID_COLS or min(ys) < 0 or max(ys) >= GRID_ROWS:
-                    # 경계를 벗어나면 이전 위치로 복원
-                    self.grid_x = old_x
-                    self.grid_y = old_y
+                    move_valid = False
+            
+            # 다른 적들과 충돌하는지 체크
+            if move_valid and other_enemies:
+                for other in other_enemies:
+                    if other is not self and self.collides_with(other):
+                        move_valid = False
+                        break
+            
+            # 이동이 불가능하면 이전 위치로 복원
+            if not move_valid:
+                self.grid_x = old_x
+                self.grid_y = old_y

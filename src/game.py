@@ -128,9 +128,9 @@ class Game:
             self.spawn_enemy()
             self.last_spawn_time = current_time
         
-        # 적 이동
+        # 적 이동 (다른 적들과 겹치지 않도록)
         for enemy in self.enemies:
-            enemy.move_towards_player(self.player)
+            enemy.move_towards_player(self.player, self.enemies)
         
         # 충돌 판정
         self.check_collision()
