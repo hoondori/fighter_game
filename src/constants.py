@@ -1,0 +1,29 @@
+"""게임 상수 정의"""
+
+# 화면 설정
+SCREEN_WIDTH = 800
+SCREEN_HEIGHT = 600
+FPS = 60
+
+# 색상 정의 (RGB)
+BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)
+RED = (255, 0, 0)
+GREEN = (0, 255, 0)
+BLUE = (0, 0, 255)
+
+# 플레이어 설정
+PLAYER_WIDTH = 30
+PLAYER_HEIGHT = 30
+PLAYER_SPEED = 5
+PLAYER_COLOR = BLUE
+
+# 적 설정
+ENEMY_WIDTH = 25
+ENEMY_HEIGHT = 25
+ENEMY_SPEED = 2
+ENEMY_COLOR = RED
+ENEMY_SPAWN_INTERVAL = 2000  # 밀리초 (2초)
+
+# 게임 타이틀
+GAME_TITLE = "Fighter Game - Version 1"
