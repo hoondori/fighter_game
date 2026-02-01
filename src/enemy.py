@@ -41,6 +41,7 @@ class Enemy(GameObject):
     def move_towards_player(self, player, other_enemies=None):
         """
         플레이어를 향해 직선으로 이동 (다른 적들과 겹치지 않게)
+        최적화: 거리 기반 조기 컷오프로 불필요한 충돌 체크 감소
         
         Args:
             player: Player 객체
@@ -81,14 +82,28 @@ class Enemy(GameObject):
                 ys = [y for x, y in positions]
                 
                 # 경계 체크
-                from src.constants import GRID_COLS, GRID_ROWS
+                from src.constants import GRID_COLS, GRID_ROWS, COLLISION_CHECK_DISTANCE
                 if min(xs) < 0 or max(xs) >= GRID_COLS or min(ys) < 0 or max(ys) >= GRID_ROWS:
                     move_valid = False
             
-            # 다른 적들과 충돌하는지 체크
+            # 다른 적들과 충돌하는지 체크 (최적화: 거리 기반 조기 컷오프)
             if move_valid and other_enemies:
                 for other in other_enemies:
-                    if other is not self and self.collides_with(other):
+                    if other is self:
+                        continue
+                    
+                    # 최적화: 거리 기반 조기 컷오프 (제곱근 계산 생략)
+                    other_center_x, other_center_y = other.get_center()
+                    dx_check = abs(self.grid_x - other_center_x)
+                    dy_check = abs(self.grid_y - other_center_y)
+                    
+                    # 맨해튼 거리로 빠른 체크 (실제 거리보다 큼)
+                    manhattan_distance = dx_check + dy_check
+                    if manhattan_distance > COLLISION_CHECK_DISTANCE:
+                        continue  # 충돌 불가능, 스킵
+                    
+                    # 실제 충돌 체크
+                    if self.collides_with(other):
                         move_valid = False
                         break
             

@@ -85,6 +85,8 @@ ENEMY_GRID_SIZE = 1  # 그리드 셀 단위
 ENEMY_SPEED_GRID = 0.15  # 한 프레임당 이동 그리드 (느리게 조정)
 ENEMY_COLOR = RED
 ENEMY_SPAWN_INTERVAL = 2000  # 밀리초 (2초)
+MAX_ENEMIES = 30  # 최대 적 개수 제한
+COLLISION_CHECK_DISTANCE = 5  # 충돌 체크 거리 (그리드 단위, 이 거리 이상은 충돌 불가능)
 
 # 게임 타이틀
 GAME_TITLE = "Fighter Game - Version 1"

@@ -3,11 +3,12 @@
 import pygame
 import random
 import sys
+import math
 from src.constants import (
     SCREEN_WIDTH, SCREEN_HEIGHT, FPS,
     GRID_WIDTH, GRID_HEIGHT, GRID_COLS, GRID_ROWS,
     BLACK, WHITE, GAME_TITLE, ENEMY_SPAWN_INTERVAL,
-    ENEMY_SHAPES, ENEMY_COLORS
+    ENEMY_SHAPES, ENEMY_COLORS, MAX_ENEMIES
 )
 from src.player import Player
 from src.enemy import Enemy
@@ -50,6 +51,10 @@ class Game:
     
     def spawn_enemy(self):
         """화면 경계에서 적을 spawn (그리드 좌표, 다양한 모양)"""
+        # 최대 개수 제한
+        if len(self.enemies) >= MAX_ENEMIES:
+            return
+        
         # 랜덤으로 모양 선택 (위치 조정을 위해 먼저 선택)
         shape_index = random.randint(0, len(ENEMY_SHAPES) - 1)
         shape = ENEMY_SHAPES[shape_index]
@@ -128,9 +133,23 @@ class Game:
             self.spawn_enemy()
             self.last_spawn_time = current_time
         
-        # 적 이동 (다른 적들과 겹치지 않도록)
-        for enemy in self.enemies:
-            enemy.move_towards_player(self.player, self.enemies)
+        # 최적화: 적 이동 순서 - 플레이어에서 먼 적부터 이동 (앞쪽 적들이 먼저 자리 잡음)
+        if self.enemies:
+            # 플레이어 중심 계산
+            player_center_x, player_center_y = self.player.get_center()
+            
+            # 플레이어로부터의 거리 기준으로 정렬 (먼 적부터)
+            sorted_enemies = sorted(
+                self.enemies,
+                key=lambda e: (e.grid_x - player_center_x)**2 + (e.grid_y - player_center_y)**2,
+                reverse=True
+            )
+            
+            # 정렬된 순서대로 이동 (이미 움직인 적들만 충돌 체크)
+            for i, enemy in enumerate(sorted_enemies):
+                # 이미 움직인 적들만 충돌 체크 대상으로
+                already_moved = sorted_enemies[:i]
+                enemy.move_towards_player(self.player, already_moved)
         
         # 충돌 판정
         self.check_collision()
