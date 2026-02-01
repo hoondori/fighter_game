@@ -94,9 +94,15 @@ class Game:
     def spawn_obstacles(self):
         """맵에 장애물 생성 (플레이어 주변은 피함)"""
         for _ in range(NUM_OBSTACLES):
-            # 장애물 크기 랜덤 (2~5 그리드)
-            width = random.randint(2, 5)
-            height = random.randint(2, 5)
+            # 장애물을 벽처럼 만들기 (width 또는 height 중 하나를 길게)
+            if random.random() < 0.5:
+                # 가로로 긴 벽
+                width = random.randint(5, 15)
+                height = random.randint(1, 3)
+            else:
+                # 세로로 긴 벽
+                width = random.randint(1, 3)
+                height = random.randint(5, 15)
             
             # 랜덤 위치 (플레이어와 일정 거리 유지)
             while True:

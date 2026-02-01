@@ -48,6 +48,7 @@ class Enemy(GameObject):
         플레이어를 향해 직선으로 이동 (다른 적들과 겹치지 않게, 장애물 회피)
         최적화: 거리 기반 조기 컷오프로 불필요한 충돌 체크 감소
         Lock-in 방지: 이미 겹쳐있는 경우 벗어나는 방향 이동 허용
+        장애물 회피: 직진이 막히면 좌우/상하로 우회 시도
         
         Args:
             player: Player 객체
@@ -83,6 +84,7 @@ class Enemy(GameObject):
             # 경계를 벗어나는지 체크
             positions = self.get_grid_positions()
             move_valid = True
+            blocked_by_obstacle = False
             
             if positions:
                 xs = [x for x, y in positions]
@@ -98,6 +100,7 @@ class Enemy(GameObject):
                 for obstacle in obstacles:
                     if self.collides_with(obstacle):
                         move_valid = False
+                        blocked_by_obstacle = True
                         break
             
             # 다른 적들과 충돌하는지 체크 (최적화: 거리 기반 조기 컷오프)
@@ -145,6 +148,94 @@ class Enemy(GameObject):
             if not move_valid:
                 self.grid_x = old_x
                 self.grid_y = old_y
+                
+                # 장애물에 막혔다면 우회 시도
+                if blocked_by_obstacle:
+                    self._try_bypass_obstacle(old_x, old_y, direction_x, direction_y, obstacles, other_enemies)
+    
+    def _try_bypass_obstacle(self, old_x, old_y, direction_x, direction_y, obstacles, other_enemies):
+        """
+        장애물을 우회하여 이동 시도
+        
+        Args:
+            old_x: 원래 x 위치
+            old_y: 원래 y 위치
+            direction_x: 원래 이동하려던 x 방향
+            direction_y: 원래 이동하려던 y 방향
+            obstacles: 장애물 리스트
+            other_enemies: 다른 적들의 리스트
+        """
+        from src.constants import GRID_COLS, GRID_ROWS
+        
+        # 우회 방향 시도 순서:
+        # 1. 주 방향이 수평이면 상하로 우회 시도
+        # 2. 주 방향이 수직이면 좌우로 우회 시도
+        bypass_attempts = []
+        
+        if abs(direction_x) > abs(direction_y):
+            # 주로 수평 이동 -> 상하로 우회
+            bypass_attempts = [
+                (direction_x * self.speed, self.speed),      # 대각선 아래
+                (direction_x * self.speed, -self.speed),     # 대각선 위
+                (0, self.speed),                              # 순수 아래
+                (0, -self.speed)                              # 순수 위
+            ]
+        else:
+            # 주로 수직 이동 -> 좌우로 우회
+            bypass_attempts = [
+                (self.speed, direction_y * self.speed),      # 대각선 오른쪽
+                (-self.speed, direction_y * self.speed),     # 대각선 왼쪽
+                (self.speed, 0),                              # 순수 오른쪽
+                (-self.speed, 0)                              # 순수 왼쪽
+            ]
+        
+        # 각 우회 방향 시도
+        for dx, dy in bypass_attempts:
+            new_x = old_x + dx
+            new_y = old_y + dy
+            
+            # 임시로 새 위치 설정
+            self.grid_x = new_x
+            self.grid_y = new_y
+            
+            # 경계 체크
+            positions = self.get_grid_positions()
+            if not positions:
+                continue
+            
+            xs = [x for x, y in positions]
+            ys = [y for x, y in positions]
+            
+            if min(xs) < 0 or max(xs) >= GRID_COLS or min(ys) < 0 or max(ys) >= GRID_ROWS:
+                continue
+            
+            # 장애물 충돌 체크
+            collision = False
+            if obstacles:
+                for obstacle in obstacles:
+                    if self.collides_with(obstacle):
+                        collision = True
+                        break
+            
+            if collision:
+                continue
+            
+            # 다른 적 충돌 체크 (간단하게)
+            if other_enemies:
+                for other in other_enemies:
+                    if other is self:
+                        continue
+                    if self.collides_with(other):
+                        collision = True
+                        break
+            
+            if not collision:
+                # 이 방향으로 이동 가능!
+                return
+        
+        # 모든 우회 시도 실패 - 원위치
+        self.grid_x = old_x
+        self.grid_y = old_y
     
     def take_damage(self, damage):
         """

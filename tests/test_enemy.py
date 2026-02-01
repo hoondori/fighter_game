@@ -208,7 +208,7 @@ class TestEnemyObstacleAvoidance:
     """적 장애물 회피 테스트 (Version 2)"""
     
     def test_obstacle_blocks_enemy(self, init_pygame):
-        """장애물이 적 이동을 막음 테스트"""
+        """장애물이 적 이동을 막음 테스트 (우회 가능)"""
         from src.obstacle import Obstacle
         
         enemy = Enemy(grid_x=10, grid_y=10, color=RED)
@@ -221,9 +221,11 @@ class TestEnemyObstacleAvoidance:
         for _ in range(100):
             enemy.move_towards_player(player, obstacles=[obstacle])
         
-        # 장애물 앞에서 멈춤 (완전히 막히거나 우회)
-        # 적이 장애물을 통과하지 않음
-        assert enemy.grid_x < 15
+        # 적이 움직였고 (우회함), 장애물을 통과하지 않음
+        assert enemy.grid_x > initial_x  # 이동했음
+        
+        # 적이 장애물 내부에 있지 않음
+        assert not enemy.collides_with(obstacle)
     
     def test_enemy_avoids_multiple_obstacles(self, init_pygame):
         """여러 장애물 회피 테스트"""
